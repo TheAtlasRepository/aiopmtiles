@@ -16,12 +16,11 @@ from pmtiles.tile import (
     zxy_to_tileid,
 )
 
-from aiopmtiles.io import FileSystem
+from .io import FileSystem
 
 
 class _GetBytes(Protocol):
-    async def __call__(self, offset: int, length: int) -> bytes:
-        ...
+    async def __call__(self, offset: int, length: int) -> bytes: ...
 
 
 @dataclass

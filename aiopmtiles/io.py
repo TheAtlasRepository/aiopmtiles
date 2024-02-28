@@ -9,6 +9,8 @@ from urllib.parse import urlparse
 import aiofiles
 import httpx
 
+from src.utilities import settings
+
 try:
     import aioboto3
 
@@ -54,6 +56,9 @@ class FileSystem(abc.ABC):
         elif parsed.scheme == "s3":
             return S3FileSystem(filepath, **kwargs)
 
+        elif parsed.scheme == "atlas":
+            return AtlasS3FileSystem(filepath, **kwargs)
+
         elif parsed.scheme == "gs":
             return GcsFileSystem(filepath, **kwargs)
 
@@ -82,9 +87,7 @@ class LocalFileSystem(FileSystem):
 
     async def __aenter__(self):
         """Async context management"""
-        self.file = await self.ctx.enter_async_context(
-            aiofiles.open(self.filepath, "rb")
-        )
+        self.file = await self.ctx.enter_async_context(aiofiles.open(self.filepath, "rb"))
         return self
 
 
@@ -134,11 +137,26 @@ class S3FileSystem(FileSystem):
     async def __aenter__(self):
         """Async context management"""
         parsed = urlparse(self.filepath)
+        if not aioboto3:
+            raise ImportError("aioboto3 is required for S3FileSystem")
         self._session = aioboto3.Session()
-        self._resource = await self.ctx.enter_async_context(
-            self._session.resource("s3")
-        )
+        self._resource = await self.ctx.enter_async_context(self._session.resource("s3"))
         self._obj = await self._resource.Object(parsed.netloc, parsed.path.strip("/"))
+        return self
+
+
+class AtlasS3FileSystem(S3FileSystem):
+    """Atlas S3 filesystem"""
+
+    async def __aenter__(self):
+        """Async context management"""
+        parsed = urlparse(self.filepath)
+
+        self._session = settings.AWS_S3_ASYNC_CLIENT
+
+        self._resource = await self.ctx.enter_async_context(self._session.resource("s3"))
+        self._obj = await self._resource.Object(settings.IMAGE_BUCKET_NAME, parsed.path)
+
         return self
 
 
