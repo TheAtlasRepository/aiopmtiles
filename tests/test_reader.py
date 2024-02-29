@@ -4,8 +4,8 @@ import os
 
 import pytest
 
-from aiopmtiles import Reader
-from aiopmtiles.io import LocalFileSystem
+from ..aiopmtiles import Reader
+from ..aiopmtiles.io import LocalFileSystem
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 VECTOR_PMTILES = os.path.join(FIXTURES_DIR, "protomaps(vector)ODbL_firenze.pmtiles")
